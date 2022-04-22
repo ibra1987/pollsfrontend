@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { useState } from "react";
-import { checkEmail, checkPassword, isEmpty } from "../utils/helpers";
+import { checkEmail, checkPassword, isEmpty } from "../../utils/helpers";
+import Spinner from "../../components/shared/Spinner";
+import axios from "axios";
+import { useRouter } from "next/router";
+
 const register = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState([]);
-  const [formState, setFormState] = useState({
+  const [successMessage, setSuccessMessage] = useState("");
+  const [userInfo, setUserInfo] = useState({
     fullName: "",
     email: "",
     emailConfirmation: "",
@@ -11,15 +17,18 @@ const register = () => {
     passwordConfirmation: "",
   });
 
-  const handleOnSubmit = (e) => {
-    e.preventDefault();
+  const router = useRouter();
 
+  const handleOnSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
     //empty fields
     if (
-      isEmpty(formState.fullName) ||
-      isEmpty(formState.email) ||
-      isEmpty(formState.password)
+      isEmpty(userInfo.fullName) ||
+      isEmpty(userInfo.email) ||
+      isEmpty(userInfo.password)
     ) {
+      setIsLoading(false);
       return (
         !errors.includes("Please fill in all fields") &&
         setErrors([...errors, "Please fill in all fields"])
@@ -27,7 +36,8 @@ const register = () => {
     }
 
     // email regex and email confirmatiom
-    if (!checkEmail(formState.email, formState.emailConfirmation)) {
+    if (!checkEmail(userInfo.email, userInfo.emailConfirmation)) {
+      setIsLoading(false);
       return (
         !errors.includes("Please check and confirm your email address") &&
         setErrors([...errors, "Please check and confirm your email address"])
@@ -36,18 +46,42 @@ const register = () => {
 
     // check passwords
 
-    if (!checkPassword(formState.password, formState.passwordConfirmation)) {
+    /* if (!checkPassword(userInfo.password, userInfo.passwordConfirmation)) {
       return (
         !errors.includes("Please check your passwords") &&
         setErrors([...errors, "Please check your passwords"])
       );
+    }*/
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/users/register",
+        userInfo,
+        {
+          withCredentials: true,
+          headers: {
+            "content-type": "application/json",
+          },
+        }
+      );
+      if (response.status === 201) {
+        setIsLoading(false);
+        //setSuccessMessage(response.data.success[0].msg);
+        router.push("/users/login?success=1");
+      }
+    } catch (err) {
+      setIsLoading(false);
+      const returnedErrors = err.response.data.errors.map((element) => {
+        return element?.msg;
+      });
+      setErrors([...returnedErrors]);
     }
   };
 
   const handleOnChange = (e) => {
     setErrors([]);
-    setFormState({
-      ...formState,
+    setUserInfo({
+      ...userInfo,
       [e.target.name]: e.target.value,
     });
   };
@@ -61,12 +95,17 @@ const register = () => {
         <h1 className=" w-4/5 mt-4 mx-auto text-gray-500 text-3xl font-bold tracking-widest">
           Sign Up and start creating polls and surveys
         </h1>
-        <div className="h-28 w-5/6 rounded-md bg-white  mt-2 ">
+        <div className=" w-5/6 rounded-md  bg-white text-sm   my-2 ">
           {errors.length > 0 && (
             <ul className="text-red-600 p-4 w-full bg-red-50">
               {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index}>*{error}</li>
               ))}
+            </ul>
+          )}
+          {successMessage.length > 0 && errors.length === 0 && (
+            <ul className="text-green-600 p-4 w-full bg-green-50">
+              <li>{successMessage} </li>
             </ul>
           )}
         </div>
@@ -79,7 +118,7 @@ const register = () => {
           <input
             type="text"
             name="fullName"
-            value={formState.fullName}
+            value={userInfo.fullName}
             onChange={handleOnChange}
             className="outline-none w-full px-2 border-b-2 mt-2  
             focus:border-b-2 focus:border-blue-400"
@@ -92,7 +131,7 @@ const register = () => {
           </label>
           <input
             type="email"
-            value={formState.email}
+            value={userInfo.email}
             onChange={handleOnChange}
             name="email"
             className="outline-none w-full px-2 border-b-2 mt-2 
@@ -107,7 +146,7 @@ const register = () => {
 
           <input
             type="email"
-            value={formState.emailConfirmation}
+            value={userInfo.emailConfirmation}
             onChange={handleOnChange}
             name="emailConfirmation"
             className="outline-none w-full px-2 border-b-2 mt-2  
@@ -121,7 +160,7 @@ const register = () => {
           </label>
           <input
             type="password"
-            value={formState.password}
+            value={userInfo.password}
             onChange={handleOnChange}
             name="password"
             className="outline-none w-full px-2 border-b-2 mt-2  
@@ -140,7 +179,7 @@ const register = () => {
 
           <input
             type="password"
-            value={formState.passwordConfirmation}
+            value={userInfo.passwordConfirmation}
             onChange={handleOnChange}
             name="passwordConfirmation"
             className="outline-none w-full px-2 border-b-2 mt-2 
@@ -149,14 +188,18 @@ const register = () => {
           />
         </div>
         <div className="my-2 w-full md:w-4/5 pb-1 flex  justify-center items-start ">
-          <input
-            type="submit"
-            value="Sign Up"
-            className="block w-full py-3
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <input
+              type="submit"
+              value="Sign Up"
+              className="block w-full py-3
              text-white text-2xl rounded-md 
             bg-blue-500 cursor-pointer 
             tracking-widest hover:bg-blue-600 font-extrabold"
-          />
+            />
+          )}
         </div>
       </form>
       <span className="text-gray-700">

@@ -1,14 +1,26 @@
 import Link from "next/link";
-import { useState } from "react";
-import { checkEmail, checkPassword, isEmpty } from "../utils/helpers";
+import { useState, useEffect } from "react";
+import { checkEmail, isEmpty } from "../../utils/helpers";
+import { useRouter } from "next/router";
+import axios from "axios";
+
 const login = () => {
+  const router = useRouter();
   const [errors, setErrors] = useState([]);
+  const [successMessage, setSuccessMessage] = useState("");
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
 
-  const handleOnSubmit = (e) => {
+  useEffect(() => {
+    const { success } = router.query;
+    if (success) {
+      return setSuccessMessage("Succssfully registred, you can now log in");
+    }
+  }, [router.query]);
+
+  const handleOnSubmit = async (e) => {
     e.preventDefault();
 
     //empty fields
@@ -29,16 +41,38 @@ const login = () => {
 
     // check passwords
 
-    if (!checkPassword(credentials.password)) {
+    if (credentials.password.length < 8) {
       return (
         !errors.includes("Please check your password") &&
         setErrors([...errors, "Please check your password"])
       );
     }
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/users/login",
+        credentials,
+        {
+          withCredentials: true,
+          headers: {
+            "content-type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        //setSuccessMessage(response.data.success[0].msg);
+        router.replace("/?success=1");
+      }
+    } catch (err) {
+      const returnedErrors = err.response?.data?.errors.map((element) => {
+        return element?.msg;
+      });
+      setErrors([...returnedErrors]);
+    }
   };
 
   const handleOnChange = (e) => {
     setErrors([]);
+    setSuccessMessage("");
     setCredentials({
       ...credentials,
       [e.target.name]: e.target.value,
@@ -54,12 +88,17 @@ const login = () => {
         <h1 className=" w-4/5 mt-8 mx-auto text-gray-500 text-3xl font-bold tracking-widest">
           Sign In to your account
         </h1>
-        <div className="h-28 w-5/6 rounded-md bg-white  mt-2 ">
+        <div className=" w-5/6 rounded-md  bg-white text-sm   my-2 ">
           {errors.length > 0 && (
             <ul className="text-red-600 p-4 w-full bg-red-50">
               {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index}>*{error}</li>
               ))}
+            </ul>
+          )}
+          {successMessage.length > 0 && errors.length === 0 && (
+            <ul className="text-green-600 p-4 w-full bg-green-50">
+              <li>{successMessage} </li>
             </ul>
           )}
         </div>
@@ -105,8 +144,14 @@ const login = () => {
       </form>
       <span className="text-gray-700">
         don't have an account?
-        <Link href="/register">
+        <Link href="/users/register">
           <a className="text-emerald-500 mx-4 underline">Register</a>
+        </Link>
+      </span>
+      <span className="text-gray-700">
+        forgot your passwordt?
+        <Link href="/users/reset-password">
+          <a className="text-emerald-500 mx-4 underline">Reset Password </a>
         </Link>
       </span>
     </section>

@@ -25,10 +25,10 @@ const NavBar = () => {
           </li>
 
           <li className="mx-4 text-lg text-gray-600">
-            <Link href="/register">
+            <Link href="/users/register">
               <a
                 className={
-                  router.pathname === "/register"
+                  router.pathname === "/users/register"
                     ? "bg-blue-400 text-red px-4 py-2 rounded text-white transition duration-500 ease-in"
                     : "text-gray-600"
                 }
@@ -38,10 +38,10 @@ const NavBar = () => {
             </Link>
           </li>
           <li className="mx-4 text-lg text-gray-600">
-            <Link href="/login">
+            <Link href="/users/login">
               <a
                 className={
-                  router.pathname === "/login"
+                  router.pathname === "/users/login"
                     ? "bg-blue-400 text-red px-4 py-2 rounded text-white transition duration-500 ease-in"
                     : "text-gray-600"
                 }

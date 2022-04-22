@@ -5,7 +5,7 @@ export const checkEmail = (email, emailConfirmation) => {
   if (email === undefined || email === null) return false;
 
   if (String(email).toLowerCase().match(emailRule)) {
-    if (emailConfirmation !== "") {
+    if (emailConfirmation) {
       if (email !== emailConfirmation) {
         return false;
       }
@@ -13,6 +13,7 @@ export const checkEmail = (email, emailConfirmation) => {
 
     return true;
   }
+  return false;
 };
 
 export const isEmpty = (value) => {
