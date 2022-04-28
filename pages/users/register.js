@@ -54,16 +54,12 @@ const register = () => {
     }*/
 
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/users/register",
-        userInfo,
-        {
-          withCredentials: true,
-          headers: {
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post("/api/users/register", userInfo, {
+        withCredentials: true,
+        headers: {
+          "content-type": "application/json",
+        },
+      });
       if (response.status === 201) {
         setIsLoading(false);
         //setSuccessMessage(response.data.success[0].msg);

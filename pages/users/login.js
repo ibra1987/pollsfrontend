@@ -1,24 +1,19 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { checkEmail, isEmpty } from "../../utils/helpers";
+import Spinner from "../../components/shared/Spinner";
 import { useRouter } from "next/router";
 import axios from "axios";
 
 const login = () => {
   const router = useRouter();
+  const [loginFails, setLoginFails] = useState(false);
   const [errors, setErrors] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
-
-  useEffect(() => {
-    const { success } = router.query;
-    if (success) {
-      return setSuccessMessage("Succssfully registred, you can now log in");
-    }
-  }, [router.query]);
 
   const handleOnSubmit = async (e) => {
     e.preventDefault();
@@ -43,21 +38,17 @@ const login = () => {
 
     if (credentials.password.length < 8) {
       return (
-        !errors.includes("Please check your password") &&
-        setErrors([...errors, "Please check your password"])
+        !errors.includes("Password must be at least 8 characters") &&
+        setErrors([...errors, "Password must be at least 8 characters"])
       );
     }
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/users/login",
-        credentials,
-        {
-          withCredentials: true,
-          headers: {
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post("/api/users/login", credentials, {
+        withCredentials: true,
+        headers: {
+          "content-type": "application/json",
+        },
+      });
       if (response.status === 200) {
         //setSuccessMessage(response.data.success[0].msg);
         router.replace("/?success=1");
@@ -66,6 +57,13 @@ const login = () => {
       const returnedErrors = err.response?.data?.errors.map((element) => {
         return element?.msg;
       });
+      if (err?.response.data?.errors[0]?.loginFails === true) {
+        setLoginFails(err?.response.data?.errors[0]?.loginFails);
+        setTimeout(() => {
+          setLoginFails(false);
+          router.replace("/users/reset-password");
+        }, 2000);
+      }
       setErrors([...returnedErrors]);
     }
   };
@@ -83,11 +81,12 @@ const login = () => {
     <section className="w-full p-2 flex flex-col justify-start items-center  ">
       <form
         onSubmit={handleOnSubmit}
-        className="w-full md:w-3/5 lg:w-2/5 border  rounded-md bg-white my-6 flex flex-col justify-start items-center"
+        className="w-full md:w-3/5 lg:w-2/5 border   rounded-md bg-white my-6 flex flex-col justify-start items-center"
       >
         <h1 className=" w-4/5 mt-8 mx-auto text-gray-500 text-3xl font-bold tracking-widest">
           Sign In to your account
         </h1>
+        {loginFails && <Spinner />}
         <div className=" w-5/6 rounded-md  bg-white text-sm   my-2 ">
           {errors.length > 0 && (
             <ul className="text-red-600 p-4 w-full bg-red-50">

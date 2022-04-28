@@ -59,7 +59,7 @@ const NavBar = () => {
                     : "text-gray-600"
                 }
               >
-                Public Polls
+                Dashboard
               </a>
             </Link>
           </li>

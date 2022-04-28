@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { checkEmail, isEmpty } from "../../../utils/helpers";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -9,6 +9,14 @@ const ResetPassword = () => {
   const [errors, setErrors] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const { err } = router.query;
+
+    if (err) {
+      setErrors([...errors, err]);
+    }
+  }, [router.query]);
 
   const handleOnSubmit = async (e) => {
     setErrors([]);
@@ -33,7 +41,7 @@ const ResetPassword = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/users/resetpassword",
+        "/api/users/resetpassword",
         { email },
         {
           withCredentials: true,

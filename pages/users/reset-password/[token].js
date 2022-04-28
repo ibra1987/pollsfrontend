@@ -2,11 +2,13 @@ import Link from "next/link";
 import Spinner from "../../../components/shared/Spinner";
 import { useState, useEffect } from "react";
 import { checkpassword, isEmpty } from "../../../utils/helpers";
+
 import { useRouter } from "next/router";
 import axios from "axios";
 
-const token = ({ validLink, msg }) => {
+const token = ({ validLink, msg, resetToken }) => {
   const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
   const [errors, setErrors] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
@@ -14,7 +16,14 @@ const token = ({ validLink, msg }) => {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
 
   useEffect(() => {
-    validLink ? setSuccessMessage(msg) : setErrors([...errors, msg]);
+    validLink
+      ? setSuccessMessage(msg)
+      : router.replace(`/users/reset-password?err=${msg}`);
+
+    return () => {
+      validLink = false;
+      msg = null;
+    };
   }, [msg, validLink]);
 
   const handleOnSubmit = async (e) => {
@@ -25,12 +34,14 @@ const token = ({ validLink, msg }) => {
 
     //empty fields
     if (isEmpty(password)) {
+      setIsLoading(false);
       return (
         !errors.includes("Please enter  password ") &&
         setErrors([...errors, "Please enter your password "])
       );
     }
     if (password !== passwordConfirmation) {
+      setIsLoading(false);
       return (
         !errors.includes("Passwords do not match ") &&
         setErrors([...errors, "Passwords do not match "])
@@ -39,8 +50,8 @@ const token = ({ validLink, msg }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/users/resetpassword",
-        { password, passwordConfirmation },
+        "http://localhost:3001/api/users/setnewpassword",
+        { password, passwordConfirmation, resetToken },
         {
           withCredentials: true,
           headers: {
@@ -66,17 +77,14 @@ const token = ({ validLink, msg }) => {
   };
 
   const handleOnChange = (e) => {
-    setErrors([]);
+    e.target.name === "password"
+      ? setPassword(e.target.value)
+      : setPasswordConfirmation(e.target.value);
 
+    setErrors([]);
     setSuccessMessage("");
-    e.target.name === "password" && setPassword(e.target.value);
-    e.target.name === "passwordConfrimation" &&
-      setPasswordConfirmation(e.target.value);
   };
 
-  if (!validLink) {
-    return <p>{errors[0]}</p>;
-  }
   return (
     <section className="w-full p-2 flex flex-col justify-start items-center  ">
       <form
@@ -152,23 +160,23 @@ export default token;
 
 export async function getServerSideProps({ query }) {
   const { token } = query;
-
   try {
     const response = await axios.get(
-      `http://localhost:3001/api/users/resetpassword/${token}`
+      `http://localhost:3000/api/users/${token}`
     );
 
     return {
       props: {
         validLink: true,
-        msg: response.data?.success[0].msg,
+        msg: response.data?.success[0].msg || null,
+        resetToken: response.data?.success[0].resetToken,
       },
     };
   } catch (err) {
     return {
       props: {
         validLink: false,
-        msg: err.response?.data?.errors[0].msg,
+        msg: err.response.data.errors[0].msg || "Something went wrong!",
       },
     };
   }
