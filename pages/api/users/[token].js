@@ -1,5 +1,5 @@
-import Token from "../../users/reset-password/[token]";
-
+// check the email token and sets new access token
+const cookie = require("cookie");
 const privatekey = process.env.JWT_SECRET;
 const User = require("../../../models/User");
 const jwt = require("jsonwebtoken");
@@ -17,7 +17,7 @@ const handler = async (req, res) => {
     return res.status(400).json({
       errors: [
         {
-          msg: "Invalid Link ",
+          msg: "Invalid Link, please check your email box for the right link ",
           value: false,
         },
       ],
@@ -26,14 +26,22 @@ const handler = async (req, res) => {
   try {
     const { id } = jwt.verify(token, privatekey);
     const passResetUser = await User.findOne({ resetPassToken: token });
+
     if (!passResetUser) {
-      throw new Error();
+      return res.status(400).json({
+        errors: [
+          {
+            msg: "Link expired, please request a new one ",
+            value: false,
+          },
+        ],
+      });
     }
     const newToken = jwt.sign({ id }, privatekey);
-    passResetUser.resetPassToken = newToken;
-    await passResetUser.save();
+    //await User.updateOne({ id }, { resetPassToken: "" });
 
     return res
+
       .status(200)
 
       .json({
@@ -41,15 +49,15 @@ const handler = async (req, res) => {
           {
             msg: "Please reset your password",
             value: true,
-            resetToken: newToken,
+            token: newToken,
           },
         ],
       });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       errors: [
         {
-          msg: "invalid Link ",
+          msg: "invalid link",
           value: false,
         },
       ],

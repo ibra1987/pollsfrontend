@@ -2,29 +2,22 @@ import Link from "next/link";
 import Spinner from "../../../components/shared/Spinner";
 import { useState, useEffect } from "react";
 import { checkpassword, isEmpty } from "../../../utils/helpers";
+import cookie from "cookie";
 
 import { useRouter } from "next/router";
 import axios from "axios";
 
-const token = ({ validLink, msg, resetToken }) => {
+//link comming from email verification sent
+//send get request to server to check the token
+
+const token = ({ validLink, msg, errorMessage }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const [errors, setErrors] = useState([]);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [errors, setErrors] = useState(() => (!validLink ? errorMessage : ""));
+  const [successMessage, setSuccessMessage] = useState(msg);
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-
-  useEffect(() => {
-    validLink
-      ? setSuccessMessage(msg)
-      : router.replace(`/users/reset-password?err=${msg}`);
-
-    return () => {
-      validLink = false;
-      msg = null;
-    };
-  }, [msg, validLink]);
 
   const handleOnSubmit = async (e) => {
     setIsLoading(true);
@@ -50,8 +43,8 @@ const token = ({ validLink, msg, resetToken }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/users/setnewpassword",
-        { password, passwordConfirmation, resetToken },
+        "/api/users/setnewpassword",
+        { password, passwordConfirmation },
         {
           withCredentials: true,
           headers: {
@@ -63,7 +56,7 @@ const token = ({ validLink, msg, resetToken }) => {
         //setSuccessMessage(response.data.success[0].msg);
         setIsLoading(false);
         setSuccessMessage("your new password has been set successfully");
-        setTimeout(() => {
+        return setTimeout(() => {
           router.replace("/users/login");
         }, 1500);
       }
@@ -158,25 +151,35 @@ const token = ({ validLink, msg, resetToken }) => {
 
 export default token;
 
-export async function getServerSideProps({ query }) {
+export async function getServerSideProps({ query, res }) {
   const { token } = query;
   try {
     const response = await axios.get(
       `http://localhost:3000/api/users/${token}`
     );
+    res.setHeader(
+      "Set-Cookie",
+      cookie.serialize("RE_TOK", response.data.success[0].token || "", {
+        httpOnly: true,
+        secure: false, //process.env.NODE_ENV !== "developement",
+        maxAge: 60 * 60,
+        path: "/",
+        sameSite: "strict",
+      })
+    );
 
     return {
       props: {
         validLink: true,
-        msg: response.data?.success[0].msg || null,
-        resetToken: response.data?.success[0].resetToken,
+        msg: response.data?.success[0].msg,
       },
     };
   } catch (err) {
     return {
       props: {
         validLink: false,
-        msg: err.response.data.errors[0].msg || "Something went wrong!",
+        errorMessage:
+          err.response.data.errors[0].msg || "Something went wrong!",
       },
     };
   }

@@ -5,7 +5,7 @@ const connectB = require("../../../config/DBConnection");
 const privatekey = process.env.JWT_SECRET;
 
 const handler = async (req, res) => {
-  if (!req.method === "POST") {
+  if (req.method !== "POST") {
     return res.redirect(307, "/users/resetpassword");
   }
   const { email } = req.body;
@@ -66,8 +66,7 @@ const handler = async (req, res) => {
       });
     }
 
-    user.resetPassToken = token;
-    await user.save();
+    await User.updateOne({ _id: user._id }, { resetPassToken: token });
 
     res.status(200).json({
       success: [

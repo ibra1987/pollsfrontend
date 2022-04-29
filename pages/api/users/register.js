@@ -89,31 +89,14 @@ const handler = async (req, res) => {
     });
     await newUser.save();
 
-    //generate a token and send it to cookies
-    const token = jwt.sign({ _id: newUser._id }, privateKey);
-
-    newUser.accessToken = token;
-    await newUser.save();
-
-    return res
-      .setHeader(
-        "Set-Cookie",
-        cookie.serialize("access", token, {
-          httpOnly: true,
-          secure: false, //process.env.NODE_ENV !== "developement",
-          maxAge: 60 * 60,
-          path: "/",
-        })
-      )
-      .status(201)
-      .json({
-        success: [
-          {
-            msg: "Account created successfully, you can now log in",
-            warning: "A verification link has been sent to your email account",
-          },
-        ],
-      });
+    return res.status(201).json({
+      success: [
+        {
+          msg: "Account created successfully, you can now log in",
+          warning: "A verification link has been sent to your email account",
+        },
+      ],
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

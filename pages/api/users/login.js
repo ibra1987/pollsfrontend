@@ -65,11 +65,12 @@ const handler = async (req, res) => {
       return res
         .setHeader(
           "Set-Cookie",
-          cookie.serialize("access", token, {
+          cookie.serialize("RE_TOK", token, {
             httpOnly: true,
             secure: false, //process.env.NODE_ENV !== "developement",
             maxAge: 60 * 60,
             path: "/",
+            sameSite: "strict",
           })
         )
         .status(200)
