@@ -14,10 +14,14 @@ const token = ({ validLink, msg, errorMessage }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const [errors, setErrors] = useState(() => (!validLink ? errorMessage : ""));
-  const [successMessage, setSuccessMessage] = useState(msg);
+  const [errors, setErrors] = useState([]);
+  const [successMessage, setSuccessMessage] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+
+  useEffect(() => {
+    validLink ? setSuccessMessage(msg) : setErrors([...errors, errorMessage]);
+  }, [errorMessage, msg]);
 
   const handleOnSubmit = async (e) => {
     setIsLoading(true);
@@ -52,7 +56,7 @@ const token = ({ validLink, msg, errorMessage }) => {
           },
         }
       );
-      if (response.status === 200) {
+      if (response.status === 201) {
         //setSuccessMessage(response.data.success[0].msg);
         setIsLoading(false);
         setSuccessMessage("your new password has been set successfully");
@@ -97,7 +101,7 @@ const token = ({ validLink, msg, errorMessage }) => {
           )}
           {successMessage.length > 0 && errors.length === 0 && (
             <ul className="text-green-600 p-4 w-full bg-green-50">
-              <li>{successMessage} </li>
+              <li>{successMessage}</li>
             </ul>
           )}
         </div>

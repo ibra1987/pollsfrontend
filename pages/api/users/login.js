@@ -60,7 +60,7 @@ const handler = async (req, res) => {
         });
       }
 
-      const token = jwt.sign({ _id: user._id }, privateKey);
+      const token = jwt.sign({ id: user._id }, privateKey);
 
       return res
         .setHeader(

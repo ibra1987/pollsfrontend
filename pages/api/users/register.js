@@ -1,10 +1,9 @@
 const User = require("../../../models/User");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const generateToken = require("../../../utils/generateToken");
 const { checkEmail } = require("../../../utils/helpers");
 const connectB = require("../../../config/DBConnection");
 const cookie = require("cookie");
-const privateKey = process.env.JWT_SECRET;
 
 const handler = async (req, res) => {
   if (!req.method === "POST") {
@@ -88,6 +87,17 @@ const handler = async (req, res) => {
       password: hashedPassword,
     });
     await newUser.save();
+
+    const emailVerificationToken = await generateToken("id", newUser._id, "1h");
+    await sendEmail({
+      receiver: newUser.email,
+      name: newUser.fullName,
+      object: `${this.name}, please verify your email address`,
+      body: {
+        type: "html",
+        value: `please verify your accunt to continue using our services. <a href='http://localhost:3000/users/acc-verification/${emailConfirmation}'></a> `,
+      },
+    });
 
     return res.status(201).json({
       success: [

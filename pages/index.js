@@ -5,9 +5,18 @@ import Header from "../components/home/Header";
 import Usage from "../components/home/Usage";
 import UsersStats from "../components/home/UsersStats";
 import Warranties from "../components/home/Warranties";
-import NavBar from "../components/shared/NavBar";
+import UserContext from "../store/userContext";
+import { useContext, useEffect } from "react";
+import axios from "axios";
 
-export default function Home() {
+export default function Home({ currentUser }) {
+  const { user, actions } = useContext(UserContext);
+
+  useEffect(() => {
+    currentUser?.isAuth
+      ? actions.startSession(currentUser)
+      : actions.endSession();
+  }, [currentUser]);
   return (
     <div className="  mx-auto ">
       <Head>
@@ -30,4 +39,28 @@ export default function Home() {
       <footer className=""></footer>
     </div>
   );
+}
+export async function getServerSideProps({ req }) {
+  try {
+    const response = await axios.get("http://localhost:3000/api/users/auth", {
+      withCredentials: true,
+      headers: {
+        cookie: req.headers.cookie,
+      },
+    });
+    const isAuth = response.data.user.isAuth;
+    if (isAuth) {
+      return {
+        props: {
+          currentUser: response.data.user,
+        },
+      };
+    }
+  } catch (error) {
+    return {
+      props: {
+        currentUser: { isAuth: false },
+      },
+    };
+  }
 }
